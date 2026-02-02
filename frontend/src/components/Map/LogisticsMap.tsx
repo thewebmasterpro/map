@@ -29,9 +29,9 @@ interface LogisticsMapProps {
   onTaskClick?: (task: Task) => void;
 }
 
-// Default center: France
-const DEFAULT_CENTER: [number, number] = [46.603354, 1.888334];
-const DEFAULT_ZOOM = 6;
+// Default center: Brussels
+const DEFAULT_CENTER: [number, number] = [50.8503, 4.3517];
+const DEFAULT_ZOOM = 12;
 
 export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapProps) {
   const tileUrl =
