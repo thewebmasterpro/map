@@ -1,9 +1,5 @@
 import type { Task, StaffMember, OptimizationResult } from "../types";
 
-function getBaseUrl(): string {
-  return "";
-}
-
 function headers(apiKey: string): HeadersInit {
   return {
     "Content-Type": "application/json",

@@ -62,8 +62,8 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick, selectedTa
   const map = useMap();
 
   useEffect(() => {
-    if (searchResults.length > 0) {
-      const result = searchResults[0];
+    const result = searchResults[0];
+    if (result) {
       map.flyTo([result.lat, result.lng], 13, { duration: 1 });
     }
   }, [searchResults, map]);
@@ -113,7 +113,6 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick, selectedTa
 
   // Routed geometries (from OSRM) when useStreetRouting=true
   const [routedRoutesByStaff, setRoutedRoutesByStaff] = useState<Record<string, Array<[number, number]>>>({});
-  const [routingLoading, setRoutingLoading] = useState(false);
 
   useEffect(() => {
     if (!useStreetRouting) {
@@ -125,7 +124,6 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick, selectedTa
     const osrmBase = import.meta.env.VITE_OSRM_URL || "http://localhost:5002";
 
     const compute = async () => {
-      setRoutingLoading(true);
       const results: Record<string, Array<[number, number]>> = {};
 
       for (const [sid, coords] of Object.entries(routesByStaff)) {
@@ -147,7 +145,6 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick, selectedTa
       }
 
       setRoutedRoutesByStaff(results);
-      setRoutingLoading(false);
     };
 
     compute();
@@ -353,6 +350,7 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick, selectedTaskId, 
           onTaskClick={onTaskClick}
           selectedTaskId={selectedTaskId}
           showRoutes={showRoutes}
+          useStreetRouting={useStreetRouting}
         />
         <ZoomControl position="bottomright" />
       </MapContainer>
