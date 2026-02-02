@@ -23,6 +23,17 @@ const staffIcon = new L.Icon({
   className: "hue-rotate-180",
 });
 
+// Create default icon
+const defaultIcon = new L.Icon({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 interface LogisticsMapProps {
   mode: LogisticsMode;
   tasks: Task[];
@@ -66,6 +77,13 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
         maxZoom={19}
         minZoom={1}
       />
+      
+      {/* Test marker - should always be visible */}
+      <Marker position={[50.8503, 4.3517]} icon={defaultIcon}>
+        <Popup>
+          <strong>Test Marker</strong>
+        </Popup>
+      </Marker>
 
       {/* Staff markers */}
       {staff && staff.length > 0 && staff.map((member) => {
@@ -93,6 +111,7 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
             <Marker
               key={task.id}
               position={[data.location.lat, data.location.lng]}
+              icon={defaultIcon}
               eventHandlers={{ click: () => onTaskClick?.(task) }}
             >
               <Popup>
@@ -121,22 +140,24 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
 
           return (
             <Fragment key={task.id}>
-              <Marker
-                position={pickupPos}
-                eventHandlers={{ click: () => onTaskClick?.(task) }}
-              >
-                <Popup>
-                  <strong>Pickup</strong> - {task.status}
-                </Popup>
-              </Marker>
-              <Marker
-                position={deliveryPos}
-                eventHandlers={{ click: () => onTaskClick?.(task) }}
-              >
-                <Popup>
-                  <strong>Livraison</strong> - {task.status}
-                </Popup>
-              </Marker>
+                <Marker
+                  position={pickupPos}
+                  icon={defaultIcon}
+                  eventHandlers={{ click: () => onTaskClick?.(task) }}
+                >
+                  <Popup>
+                    <strong>Pickup</strong> - {task.status}
+                  </Popup>
+                </Marker>
+                <Marker
+                  position={deliveryPos}
+                  icon={defaultIcon}
+                  eventHandlers={{ click: () => onTaskClick?.(task) }}
+                >
+                  <Popup>
+                    <strong>Livraison</strong> - {task.status}
+                  </Popup>
+                </Marker>
               <Polyline
                 positions={[pickupPos, deliveryPos]}
                 pathOptions={{
