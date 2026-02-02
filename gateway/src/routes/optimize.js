@@ -37,7 +37,18 @@ optimizeRoutes.post("/", async (req, res, next) => {
     const vroomPayload = buildVroomPayload(tasksResult.items, staffResult.items);
 
     // 4. Call VROOM engine
-    const vroomResult = await solveVroom(vroomPayload);
+    console.log('[optimize] VROOM payload:', {
+      vehicles: vroomPayload.vehicles.length,
+      jobs: vroomPayload.jobs.length,
+      shipments: vroomPayload.shipments.length,
+    });
+    let vroomResult;
+    try {
+      vroomResult = await solveVroom(vroomPayload);
+    } catch (err) {
+      console.error('[optimize] VROOM error:', err && err.message, err);
+      throw err;
+    }
 
     // 5. Parse solution and update PocketBase
     const updates = parseSolution(vroomResult);

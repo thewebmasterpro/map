@@ -3,20 +3,24 @@ import type { Task, ShipmentData } from "../../types";
 interface DeliveryCardListProps {
   tasks: Task[];
   onTaskClick?: (task: Task) => void;
+  selectedTaskId?: string | null;
 }
 
-export function DeliveryCardList({ tasks, onTaskClick }: DeliveryCardListProps) {
+export function DeliveryCardList({ tasks, onTaskClick, selectedTaskId }: DeliveryCardListProps) {
   const sorted = [...tasks].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
     <div className="space-y-2">
       {sorted.map((task) => {
         const data = task.data as ShipmentData;
+        const isSelected = selectedTaskId === task.id;
 
         return (
           <div
             key={task.id}
-            className="task-item p-4 rounded-lg border border-gray-200 hover:border-hagen-300 cursor-pointer transition-colors"
+            className={`task-item p-4 rounded-lg border cursor-pointer transition-colors ${
+              isSelected ? "border-hagen-400 bg-blue-50" : "border-gray-200 hover:border-hagen-300"
+            }`}
             onClick={() => onTaskClick?.(task)}
           >
             {/* Header */}

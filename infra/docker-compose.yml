@@ -56,7 +56,8 @@ services:
       - NODE_ENV=production
       - GATEWAY_PORT=4000
       - POCKETBASE_URL=http://pocketbase:8090
-      - VROOM_HOST=http://localhost:3000
+      # When gateway runs inside Docker, point to host.docker.internal to reach host services
+      - VROOM_HOST=http://host.docker.internal:3000
       - OSRM_HOST=http://osrm:5000
     env_file:
       - ../.env

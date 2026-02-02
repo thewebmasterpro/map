@@ -1,6 +1,7 @@
 import { useTasks } from "../hooks/useTasks";
 import { useStaff } from "../hooks/useStaff";
 import { useOptimize } from "../hooks/useOptimize";
+import { useState } from "react";
 import { LogisticsMap } from "./Map/LogisticsMap";
 import { ServiceTimeline } from "./Timeline/ServiceTimeline";
 import { DeliveryCardList } from "./DeliveryCards/DeliveryCardList";
@@ -36,6 +37,17 @@ export function HagenLogisticsModule({
     }
   };
 
+  // UI state: selected task and whether to show traced routes
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [showRoutes, setShowRoutes] = useState<boolean>(true);
+  const [useStreetRouting, setUseStreetRouting] = useState<boolean>(false);
+
+  const handleSelectTask = (task?: any) => {
+    if (!task) return setSelectedTaskId(null);
+    setSelectedTaskId((prev) => (prev === task.id ? null : task.id));
+    onTaskClick?.(task);
+  };
+
   return (
     <div className={`flex flex-col lg:flex-row gap-4 h-full ${className}`}>
       {/* ─── Sidebar: Task list ─────────────────────── */}
@@ -55,6 +67,24 @@ export function HagenLogisticsModule({
           disabled={tasks.length === 0}
         />
 
+        <button
+          onClick={() => setShowRoutes((s) => !s)}
+          className={`ml-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            showRoutes ? "bg-white text-hagen-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          {showRoutes ? "Masquer la route" : "Tracer la route"}
+        </button>
+
+        <button
+          onClick={() => setUseStreetRouting((s) => !s)}
+          className={`ml-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            useStreetRouting ? "bg-white text-hagen-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          {useStreetRouting ? "Rues : ON" : "Rues : OFF"}
+        </button>
+
         <div className="flex-1 overflow-y-auto pr-1">
           {tasksError && (
             <p className="text-sm text-red-500 p-2">{tasksError}</p>
@@ -67,7 +97,7 @@ export function HagenLogisticsModule({
           ) : mode === "service" ? (
             <ServiceTimeline tasks={tasks} onTaskClick={onTaskClick} />
           ) : (
-            <DeliveryCardList tasks={tasks} onTaskClick={onTaskClick} />
+            <DeliveryCardList tasks={tasks} onTaskClick={handleSelectTask} selectedTaskId={selectedTaskId} />
           )}
         </div>
       </div>
@@ -78,7 +108,10 @@ export function HagenLogisticsModule({
           mode={mode}
           tasks={tasks}
           staff={staff}
-          onTaskClick={onTaskClick}
+          onTaskClick={handleSelectTask}
+          selectedTaskId={selectedTaskId}
+          showRoutes={showRoutes}
+          useStreetRouting={useStreetRouting}
         />
       </div>
     </div>

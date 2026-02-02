@@ -31,6 +31,12 @@
   z-index: 401 !important;
 }
 
+/* Highlighted marker style when selected from list or map */
+.leaflet-marker-icon.marker-selected {
+  transform: scale(1.15) !important;
+  filter: hue-rotate(150deg) saturate(140%) drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+
 /* ─── Task list animation ──────────────────────────── */
 .task-item {
   transition: transform 0.4s ease, opacity 0.3s ease;

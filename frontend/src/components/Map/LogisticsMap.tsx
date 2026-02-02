@@ -39,6 +39,9 @@ interface LogisticsMapProps {
   tasks: Task[];
   staff: StaffMember[];
   onTaskClick?: (task: Task) => void;
+  selectedTaskId?: string | null;
+  showRoutes?: boolean;
+  useStreetRouting?: boolean;
 }
 
 // Default center: Belgium center
@@ -51,9 +54,11 @@ interface MapContentProps {
   staff: StaffMember[];
   searchResults: Array<{ lat: number; lng: number; name: string }>;
   onTaskClick?: (task: Task) => void;
+  selectedTaskId?: string | null;
+  showRoutes?: boolean;
+  useStreetRouting?: boolean;
 }
-
-function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapContentProps) {
+function MapContent({ mode, tasks, staff, searchResults, onTaskClick, selectedTaskId, showRoutes = true, useStreetRouting = false }: MapContentProps) {
   const map = useMap();
 
   useEffect(() => {
@@ -68,6 +73,85 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
     console.log("MapContent - Staff:", staff.length, staff);
     console.log("MapContent - Tasks:", tasks.length, tasks);
   }, [staff, tasks]);
+
+  // Build ordered routes per staff using sort_order and staff_id
+  const routesByStaff: Record<string, Array<[number, number]>> = {};
+
+  // Initialize with staff start locations so polylines begin at depot
+  (staff || []).forEach((s) => {
+    const loc = s.start_location;
+    if (loc) routesByStaff[s.id] = [[loc.lat, loc.lng]];
+  });
+
+  (tasks || [])
+    .slice()
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    .forEach((t) => {
+      const sid = t.staff_id;
+      if (!sid) return; // only build routes for assigned tasks
+      if (!routesByStaff[sid]) routesByStaff[sid] = [];
+
+      if (t.type === "service") {
+        const data = t.data as ServiceData;
+        if (data?.location) routesByStaff[sid].push([data.location.lat, data.location.lng]);
+      } else {
+        const data = t.data as ShipmentData;
+        if (data?.pickup_lat && data?.pickup_lng) routesByStaff[sid].push([data.pickup_lat, data.pickup_lng]);
+        if (data?.delivery_lat && data?.delivery_lng) routesByStaff[sid].push([data.delivery_lat, data.delivery_lng]);
+      }
+    });
+
+  // icons for selected state
+  const selectedIcon = new L.Icon({
+    iconUrl: markerIcon,
+    iconRetinaUrl: markerIcon2x,
+    shadowUrl: markerShadow,
+    iconSize: [28, 46],
+    iconAnchor: [14, 46],
+    className: "marker-selected",
+  });
+
+  // Routed geometries (from OSRM) when useStreetRouting=true
+  const [routedRoutesByStaff, setRoutedRoutesByStaff] = useState<Record<string, Array<[number, number]>>>({});
+  const [routingLoading, setRoutingLoading] = useState(false);
+
+  useEffect(() => {
+    if (!useStreetRouting) {
+      setRoutedRoutesByStaff({});
+      return;
+    }
+
+    // Compute OSRM routes for each staff sequentially
+    const osrmBase = import.meta.env.VITE_OSRM_URL || "http://localhost:5002";
+
+    const compute = async () => {
+      setRoutingLoading(true);
+      const results: Record<string, Array<[number, number]>> = {};
+
+      for (const [sid, coords] of Object.entries(routesByStaff)) {
+        try {
+          if (!coords || coords.length < 2) continue;
+          // OSRM expects lon,lat pairs
+          const coordStr = coords.map(([lat, lng]) => `${lng},${lat}`).join(";");
+          const url = `${osrmBase}/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error(`OSRM ${resp.status}`);
+          const body = await resp.json();
+          const geom = body?.routes?.[0]?.geometry?.coordinates;
+          if (Array.isArray(geom)) {
+            results[sid] = geom.map((p: [number, number]) => [p[1], p[0]]);
+          }
+        } catch (err) {
+          console.warn("OSRM route failed for", sid, err);
+        }
+      }
+
+      setRoutedRoutesByStaff(results);
+      setRoutingLoading(false);
+    };
+
+    compute();
+  }, [useStreetRouting, JSON.stringify(routesByStaff)]);
 
   return (
     <>
@@ -107,11 +191,13 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
         tasks.map((task) => {
           const data = task.data as ServiceData;
           if (!data || !data.location) return null;
+          const isSelected = selectedTaskId === task.id;
+
           return (
             <Marker
               key={task.id}
               position={[data.location.lat, data.location.lng]}
-              icon={defaultIcon}
+              icon={isSelected ? selectedIcon : defaultIcon}
               eventHandlers={{ click: () => onTaskClick?.(task) }}
             >
               <Popup>
@@ -137,12 +223,13 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
 
           const pickupPos: [number, number] = [data.pickup_lat, data.pickup_lng];
           const deliveryPos: [number, number] = [data.delivery_lat, data.delivery_lng];
+          const isSelected = selectedTaskId === task.id;
 
           return (
             <Fragment key={task.id}>
                 <Marker
                   position={pickupPos}
-                  icon={defaultIcon}
+                  icon={isSelected ? selectedIcon : defaultIcon}
                   eventHandlers={{ click: () => onTaskClick?.(task) }}
                 >
                   <Popup>
@@ -151,30 +238,45 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
                 </Marker>
                 <Marker
                   position={deliveryPos}
-                  icon={defaultIcon}
+                  icon={isSelected ? selectedIcon : defaultIcon}
                   eventHandlers={{ click: () => onTaskClick?.(task) }}
                 >
                   <Popup>
                     <strong>Livraison</strong> - {task.status}
                   </Popup>
                 </Marker>
-              <Polyline
-                positions={[pickupPos, deliveryPos]}
-                pathOptions={{
-                  color: "#0c93e9",
-                  weight: 2,
-                  dashArray: "8 4",
-                  className: "flow-arrow",
-                }}
-              />
+              {showRoutes && (
+                <Polyline
+                  positions={[pickupPos, deliveryPos]}
+                  pathOptions={{
+                    color: "#0c93e9",
+                    weight: 2,
+                    dashArray: "8 4",
+                    className: "flow-arrow",
+                  }}
+                />
+              )}
             </Fragment>
           );
         })}
+
+      {/* Draw one Polyline per staff using ordered coordinates */}
+      {showRoutes && Object.entries(routesByStaff).map(([sid, coords]) => {
+        if (!coords || coords.length < 2) return null;
+        const staffIndex = staff.findIndex((s) => s.id === sid);
+        const colors = ["#0c93e9", "#e74c3c", "#2ecc71", "#f1c40f", "#9b59b6"];
+        const color = colors[(staffIndex > -1 ? staffIndex : 0) % colors.length];
+        // Prefer routed geometry when available
+        const routed = (routedRoutesByStaff && routedRoutesByStaff[sid]) || null;
+        return (
+          <Polyline key={`route-${sid}`} positions={routed || coords} pathOptions={{ color, weight: 3 }} />
+        );
+      })}
     </>
   );
 }
 
-export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapProps) {
+export function LogisticsMap({ mode, tasks, staff, onTaskClick, selectedTaskId, showRoutes, useStreetRouting }: LogisticsMapProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Array<{ lat: number; lng: number; name: string }>>([]);
   
@@ -248,7 +350,9 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
           tasks={tasks} 
           staff={staff} 
           searchResults={searchResults}
-          onTaskClick={onTaskClick} 
+          onTaskClick={onTaskClick}
+          selectedTaskId={selectedTaskId}
+          showRoutes={showRoutes}
         />
         <ZoomControl position="bottomright" />
       </MapContainer>
