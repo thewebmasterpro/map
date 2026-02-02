@@ -55,13 +55,11 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
   return (
     <>
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
         minZoom={1}
       />
-
-      <ZoomControl position="bottomright" />
 
       {/* Staff markers */}
       {staff.map((member) => {
@@ -211,7 +209,7 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
         style={{ width: "100%", height: "100%" }}
-        zoomControl={false}
+        zoomControl={true}
       >
         <MapContent 
           mode={mode} 
@@ -220,6 +218,7 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
           searchResults={searchResults}
           onTaskClick={onTaskClick} 
         />
+        <ZoomControl position="bottomright" />
       </MapContainer>
     </div>
   );
