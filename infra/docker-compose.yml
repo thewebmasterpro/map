@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ─── OSRM Backend ────────────────────────────────────
   osrm:
@@ -7,7 +5,7 @@ services:
     container_name: hagen-osrm
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5002:5000"
     volumes:
       - osrm-data:/data
     command: osrm-routed --algorithm mld /data/brussels_capital_region-latest.osrm
@@ -21,20 +19,10 @@ services:
       - hagen-network
 
   # ─── VROOM Optimization Engine ───────────────────────
-  vroom:
-    image: vroomvrp/vroom-docker:latest
-    container_name: hagen-vroom
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - VROOM_ROUTER=osrm
-      - VROOM_ROUTER_URL=http://osrm:5000
-    depends_on:
-      osrm:
-        condition: service_healthy
-    networks:
-      - hagen-network
+  # NOTE: VROOM doesn't have an official Docker image on Docker Hub
+  # For development, we'll run it separately or use a mock service
+  # You can build VROOM from source: https://github.com/VROOM-Project/vroom
+  # Or use: docker run -p 3000:3000 vroomvrp/vroom-docker locally if you have it
 
   # ─── PocketBase ──────────────────────────────────────
   pocketbase:
@@ -42,7 +30,7 @@ services:
     container_name: hagen-pocketbase
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      - "8091:8090"
     volumes:
       - pb-data:/pb/pb_data
       - ./pocketbase/pb_migrations:/pb/pb_migrations
@@ -63,18 +51,17 @@ services:
     container_name: hagen-gateway
     restart: unless-stopped
     ports:
-      - "4000:4000"
+      - "4002:4000"
     environment:
       - NODE_ENV=production
       - GATEWAY_PORT=4000
       - POCKETBASE_URL=http://pocketbase:8090
-      - VROOM_HOST=http://vroom:3000
+      - VROOM_HOST=http://localhost:3000
       - OSRM_HOST=http://osrm:5000
     env_file:
       - ../.env
     depends_on:
       - pocketbase
-      - vroom
     networks:
       - hagen-network
 

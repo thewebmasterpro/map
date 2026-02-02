@@ -1,7 +1,7 @@
 import type { Task, StaffMember, OptimizationResult } from "../types";
 
 function getBaseUrl(): string {
-  return import.meta.env.VITE_API_URL || "/api";
+  return "";
 }
 
 function headers(apiKey: string): HeadersInit {
@@ -25,7 +25,7 @@ export async function fetchTasks(
   apiKey: string,
   params?: { status?: string; type?: string }
 ): Promise<{ items: Task[]; totalItems: number }> {
-  const url = new URL(`${getBaseUrl()}/api/tasks`);
+  const url = new URL("/api/tasks", window.location.origin);
   if (params?.status) url.searchParams.set("status", params.status);
   if (params?.type) url.searchParams.set("type", params.type);
 
@@ -37,7 +37,7 @@ export async function createTask(
   apiKey: string,
   task: Partial<Task>
 ): Promise<Task> {
-  const res = await fetch(`${getBaseUrl()}/api/tasks`, {
+  const res = await fetch(`/api/tasks`, {
     method: "POST",
     headers: headers(apiKey),
     body: JSON.stringify(task),
@@ -50,7 +50,7 @@ export async function updateTask(
   taskId: string,
   data: Partial<Task>
 ): Promise<Task> {
-  const res = await fetch(`${getBaseUrl()}/api/tasks/${taskId}`, {
+  const res = await fetch(`/api/tasks/${taskId}`, {
     method: "PATCH",
     headers: headers(apiKey),
     body: JSON.stringify(data),
@@ -61,7 +61,7 @@ export async function updateTask(
 // ─── Staff ────────────────────────────────────────────
 
 export async function fetchStaff(apiKey: string): Promise<{ items: StaffMember[] }> {
-  const res = await fetch(`${getBaseUrl()}/api/staff`, {
+  const res = await fetch(`/api/staff`, {
     headers: headers(apiKey),
   });
   return handleResponse(res);
@@ -70,7 +70,7 @@ export async function fetchStaff(apiKey: string): Promise<{ items: StaffMember[]
 // ─── Optimization ─────────────────────────────────────
 
 export async function optimize(apiKey: string): Promise<OptimizationResult> {
-  const res = await fetch(`${getBaseUrl()}/api/optimize`, {
+  const res = await fetch(`/api/optimize`, {
     method: "POST",
     headers: headers(apiKey),
   });

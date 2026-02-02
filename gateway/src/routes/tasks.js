@@ -15,8 +15,6 @@ tasksRouter.get("/", async (req, res, next) => {
 
     const result = await pb.collection("tasks").getList(Number(page), Number(perPage), {
       filter,
-      sort: "sort_order,created",
-      expand: "staff_id",
     });
 
     res.json(result);
