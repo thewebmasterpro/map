@@ -11,6 +11,26 @@
   z-index: 0;
 }
 
+/* ─── Leaflet markers and icons ────────────────────── */
+.leaflet-marker-icon {
+  display: block !important;
+  opacity: 1 !important;
+  z-index: 400 !important;
+}
+
+.leaflet-marker-shadow {
+  display: block !important;
+  opacity: 1 !important;
+}
+
+.leaflet-popup {
+  z-index: 600 !important;
+}
+
+.leaflet-control {
+  z-index: 401 !important;
+}
+
 /* ─── Task list animation ──────────────────────────── */
 .task-item {
   transition: transform 0.4s ease, opacity 0.3s ease;

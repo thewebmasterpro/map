@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup, Polyline, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import type { Task, StaffMember, LogisticsMode, ServiceData, ShipmentData } from "../../types";
 
 // Fix default marker icons in bundled environments
@@ -52,18 +52,25 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
     }
   }, [searchResults, map]);
 
+  // Debug logging
+  useEffect(() => {
+    console.log("MapContent - Staff:", staff.length, staff);
+    console.log("MapContent - Tasks:", tasks.length, tasks);
+  }, [staff, tasks]);
+
   return (
     <>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url={import.meta.env.VITE_MAP_TILE_URL || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
         maxZoom={19}
         minZoom={1}
       />
 
       {/* Staff markers */}
-      {staff.map((member) => {
+      {staff && staff.length > 0 && staff.map((member) => {
         const loc = member.current_location || member.start_location;
+        if (!loc) return null;
         return (
           <Marker key={member.id} position={[loc.lat, loc.lng]} icon={staffIcon}>
             <Popup>
@@ -77,9 +84,11 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
 
       {/* Service mode: simple markers */}
       {mode === "service" &&
+        tasks &&
+        tasks.length > 0 &&
         tasks.map((task) => {
           const data = task.data as ServiceData;
-          if (!data.location) return null;
+          if (!data || !data.location) return null;
           return (
             <Marker
               key={task.id}
@@ -101,15 +110,17 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
 
       {/* Delivery mode: pickup + delivery markers with flow arrows */}
       {mode === "delivery" &&
+        tasks &&
+        tasks.length > 0 &&
         tasks.map((task) => {
           const data = task.data as ShipmentData;
-          if (!data.pickup_lat || !data.delivery_lat) return null;
+          if (!data || !data.pickup_lat || !data.delivery_lat) return null;
 
           const pickupPos: [number, number] = [data.pickup_lat, data.pickup_lng];
           const deliveryPos: [number, number] = [data.delivery_lat, data.delivery_lng];
 
           return (
-            <span key={task.id}>
+            <Fragment key={task.id}>
               <Marker
                 position={pickupPos}
                 eventHandlers={{ click: () => onTaskClick?.(task) }}
@@ -135,7 +146,7 @@ function MapContent({ mode, tasks, staff, searchResults, onTaskClick }: MapConte
                   className: "flow-arrow",
                 }}
               />
-            </span>
+            </Fragment>
           );
         })}
     </>
