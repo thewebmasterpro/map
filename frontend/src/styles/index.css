@@ -11,30 +11,6 @@
   z-index: 0;
 }
 
-.leaflet-pane,
-.leaflet-tile,
-.leaflet-marker-icon,
-.leaflet-marker-shadow,
-.leaflet-tile-container,
-.leaflet-pane > svg,
-.leaflet-pane > canvas,
-.leaflet-zoom-box,
-.leaflet-image-layer,
-.leaflet-layer {
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
-.leaflet-container a.leaflet-active {
-  outline: 2px solid hagen;
-}
-
-.leaflet-zoom-box {
-  border: 2px dotted hagen;
-  background: rgba(255, 255, 255, 0.5);
-}
-
 /* ─── Task list animation ──────────────────────────── */
 .task-item {
   transition: transform 0.4s ease, opacity 0.3s ease;

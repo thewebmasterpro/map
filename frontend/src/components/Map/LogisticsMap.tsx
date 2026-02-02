@@ -41,7 +41,6 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
     <MapContainer
       center={DEFAULT_CENTER}
       zoom={DEFAULT_ZOOM}
-      className="w-full h-full"
       style={{ width: "100%", height: "100%" }}
     >
       <TileLayer
