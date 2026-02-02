@@ -10,9 +10,9 @@ services:
       - "5000:5000"
     volumes:
       - osrm-data:/data
-    command: osrm-routed --algorithm mld /data/france-latest.osrm
+    command: osrm-routed --algorithm mld /data/brussels_capital_region-latest.osrm
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/nearest/v1/driving/2.3522,48.8566"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/nearest/v1/driving/4.3517,50.8503"]
       interval: 30s
       timeout: 10s
       retries: 3
