@@ -41,7 +41,8 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
     <MapContainer
       center={DEFAULT_CENTER}
       zoom={DEFAULT_ZOOM}
-      className="h-full w-full rounded-lg"
+      className="w-full h-full"
+      style={{ width: "100%", height: "100%" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
