@@ -35,7 +35,7 @@ const DEFAULT_ZOOM = 12;
 
 export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapProps) {
   const tileUrl =
-    import.meta.env.VITE_MAP_TILE_URL || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    import.meta.env.VITE_MAP_TILE_URL || "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
   return (
     <MapContainer
@@ -44,8 +44,10 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
       style={{ width: "100%", height: "100%" }}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         url={tileUrl}
+        maxZoom={19}
+        minZoom={1}
       />
 
       {/* Staff markers */}
