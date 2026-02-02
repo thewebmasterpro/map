@@ -89,7 +89,6 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
             <button
               key={idx}
               onClick={() => {
-                // Would need to use useMap hook to fly to location
                 setSearchResults([]);
                 setSearchQuery("");
               }}
@@ -107,91 +106,93 @@ export function LogisticsMap({ mode, tasks, staff, onTaskClick }: LogisticsMapPr
         style={{ width: "100%", height: "100%" }}
         zoomControl={false}
       >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url={tileUrl}
-        maxZoom={19}
-        minZoom={1}
-      />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url={tileUrl}
+          maxZoom={19}
+          minZoom={1}
+        />
 
-      <ZoomControl position="bottomright" />
+        <ZoomControl position="bottomright" />
 
-      {/* Staff markers */}
-      {staff.map((member) => {
-        const loc = member.current_location || member.start_location;
-        return (
-          <Marker key={member.id} position={[loc.lat, loc.lng]} icon={staffIcon}>
-            <Popup>
-              <strong>{member.name}</strong>
-              <br />
-              {member.is_available ? "Disponible" : "Occupé"}
-            </Popup>
-          </Marker>
-        );
-      })}
-
-      {/* Service mode: simple markers */}
-      {mode === "service" &&
-        tasks.map((task) => {
-          const data = task.data as ServiceData;
-          if (!data.location) return null;
+        {/* Staff markers */}
+        {staff.map((member) => {
+          const loc = member.current_location || member.start_location;
           return (
-            <Marker
-              key={task.id}
-              position={[data.location.lat, data.location.lng]}
-              eventHandlers={{ click: () => onTaskClick?.(task) }}
-            >
+            <Marker key={member.id} position={[loc.lat, loc.lng]} icon={staffIcon}>
               <Popup>
-                <div className="text-sm">
-                  <strong>Intervention</strong>
-                  <br />
-                  Durée : {Math.round((data.duration || 0) / 60)} min
-                  <br />
-                  Statut : {task.status}
-                </div>
+                <strong>{member.name}</strong>
+                <br />
+                {member.is_available ? "Disponible" : "Occupé"}
               </Popup>
             </Marker>
           );
         })}
 
-      {/* Delivery mode: pickup + delivery markers with flow arrows */}
-      {mode === "delivery" &&
-        tasks.map((task) => {
-          const data = task.data as ShipmentData;
-          if (!data.pickup_lat || !data.delivery_lat) return null;
-
-          const pickupPos: [number, number] = [data.pickup_lat, data.pickup_lng];
-          const deliveryPos: [number, number] = [data.delivery_lat, data.delivery_lng];
-
-          return (
-            <span key={task.id}>
+        {/* Service mode: simple markers */}
+        {mode === "service" &&
+          tasks.map((task) => {
+            const data = task.data as ServiceData;
+            if (!data.location) return null;
+            return (
               <Marker
-                position={pickupPos}
+                key={task.id}
+                position={[data.location.lat, data.location.lng]}
                 eventHandlers={{ click: () => onTaskClick?.(task) }}
               >
                 <Popup>
-                  <strong>Pickup</strong> - {task.status}
+                  <div className="text-sm">
+                    <strong>Intervention</strong>
+                    <br />
+                    Durée : {Math.round((data.duration || 0) / 60)} min
+                    <br />
+                    Statut : {task.status}
+                  </div>
                 </Popup>
               </Marker>
-              <Marker
-                position={deliveryPos}
-                eventHandlers={{ click: () => onTaskClick?.(task) }}
-              >
-                <Popup>
-                  <strong>Livraison</strong> - {task.status}
-                </Popup>
-              </Marker>
-              <Polyline
-                positions={[pickupPos, deliveryPos]}
-                pathOptions={{
-                  color: "#0c93e9",
-                  weight: 2,
-                  dashArray: "8 4",
-                  className: "flow-arrow",
-                }}
-              />
-            </span>
-          );
-        })}
-    </MapContainer>
+            );
+          })}
+
+        {/* Delivery mode: pickup + delivery markers with flow arrows */}
+        {mode === "delivery" &&
+          tasks.map((task) => {
+            const data = task.data as ShipmentData;
+            if (!data.pickup_lat || !data.delivery_lat) return null;
+
+            const pickupPos: [number, number] = [data.pickup_lat, data.pickup_lng];
+            const deliveryPos: [number, number] = [data.delivery_lat, data.delivery_lng];
+
+            return (
+              <span key={task.id}>
+                <Marker
+                  position={pickupPos}
+                  eventHandlers={{ click: () => onTaskClick?.(task) }}
+                >
+                  <Popup>
+                    <strong>Pickup</strong> - {task.status}
+                  </Popup>
+                </Marker>
+                <Marker
+                  position={deliveryPos}
+                  eventHandlers={{ click: () => onTaskClick?.(task) }}
+                >
+                  <Popup>
+                    <strong>Livraison</strong> - {task.status}
+                  </Popup>
+                </Marker>
+                <Polyline
+                  positions={[pickupPos, deliveryPos]}
+                  pathOptions={{
+                    color: "#0c93e9",
+                    weight: 2,
+                    dashArray: "8 4",
+                    className: "flow-arrow",
+                  }}
+                />
+              </span>
+            );
+          })}
+      </MapContainer>
     </div>
+  );
+}
