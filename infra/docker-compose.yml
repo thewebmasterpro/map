@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  # ─── OSRM Backend ────────────────────────────────────
+  osrm:
+    image: osrm/osrm-backend:latest
+    container_name: hagen-osrm
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - osrm-data:/data
+    command: osrm-routed --algorithm mld /data/france-latest.osrm
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/nearest/v1/driving/2.3522,48.8566"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - hagen-network
+
+  # ─── VROOM Optimization Engine ───────────────────────
+  vroom:
+    image: vroomvrp/vroom-docker:latest
+    container_name: hagen-vroom
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VROOM_ROUTER=osrm
+      - VROOM_ROUTER_URL=http://osrm:5000
+    depends_on:
+      osrm:
+        condition: service_healthy
+    networks:
+      - hagen-network
+
+  # ─── PocketBase ──────────────────────────────────────
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: hagen-pocketbase
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - pb-data:/pb/pb_data
+      - ./pocketbase/pb_migrations:/pb/pb_migrations
+      - ./pocketbase/pb_hooks:/pb/pb_hooks
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hagen-network
+
+  # ─── API Gateway ─────────────────────────────────────
+  gateway:
+    build:
+      context: ../gateway
+      dockerfile: Dockerfile
+    container_name: hagen-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - GATEWAY_PORT=4000
+      - POCKETBASE_URL=http://pocketbase:8090
+      - VROOM_HOST=http://vroom:3000
+      - OSRM_HOST=http://osrm:5000
+    env_file:
+      - ../.env
+    depends_on:
+      - pocketbase
+      - vroom
+    networks:
+      - hagen-network
+
+volumes:
+  osrm-data:
+    driver: local
+  pb-data:
+    driver: local
+
+networks:
+  hagen-network:
+    driver: bridge

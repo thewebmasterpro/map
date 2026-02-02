@@ -1,0 +1,25 @@
+{
+  "name": "hagen-logistics-gateway",
+  "version": "1.0.0",
+  "description": "API Gateway for Hagen Logistics - VROOM/OSRM middleware",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.1",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "pocketbase": "^0.25.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.17.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

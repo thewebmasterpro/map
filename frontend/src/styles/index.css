@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Leaflet overrides ────────────────────────────── */
+@import "leaflet/dist/leaflet.css";
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* ─── Task list animation ──────────────────────────── */
+.task-item {
+  transition: transform 0.4s ease, opacity 0.3s ease;
+}
+
+.task-item-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.task-item-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Status badges ────────────────────────────────── */
+.badge-pending {
+  @apply bg-gray-100 text-gray-700;
+}
+
+.badge-optimized {
+  @apply bg-blue-100 text-blue-700;
+}
+
+.badge-in_progress {
+  @apply bg-amber-100 text-amber-700;
+}
+
+.badge-completed {
+  @apply bg-green-100 text-green-700;
+}
+
+/* ─── Flow arrow (delivery mode) ───────────────────── */
+.flow-arrow {
+  stroke-dasharray: 8 4;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
