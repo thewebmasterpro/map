@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/anouarasrih/Documents/IA DEV/map.hagendigital/map/gateway/logs/.4ebe5e8327d48970839e46e717129e57ab0eb8e6-audit.json",
+    "files": [
+        {
+            "date": 1770107155710,
+            "name": "/Users/anouarasrih/Documents/IA DEV/map.hagendigital/map/gateway/logs/error-2026-02-03.log",
+            "hash": "7523f1ee44cdd9b3a4b0f8ec40f4850881c24f65d4380faf74c7f7e679186af2"
+        }
+    ],
+    "hashType": "sha256"
+}

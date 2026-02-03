@@ -1,0 +1,35 @@
+# Dependencies
+node_modules
+package-lock.json
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# PocketBase
+pocketbase/pb_data
+
+# OSRM data
+infra/osrm/data/*.osm.pbf
+infra/osrm/data/*.osrm*
+
+# IDE
+.vscode
+.idea
+
+# Coverage
+coverage
+
+# Generated files
+*.min.js
+*.map

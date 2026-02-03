@@ -1,0 +1,157 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ─── Frontend Tests & Build ───────────────────────────
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:4000' }}
+          VITE_POCKETBASE_URL: ${{ secrets.VITE_POCKETBASE_URL || 'http://localhost:8090' }}
+          VITE_MAP_TILE_URL: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY || 'test-key' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ─── Gateway Tests & Build ────────────────────────────
+  gateway:
+    name: Gateway CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./gateway
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: gateway/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run tests
+        run: npm run test:run
+        env:
+          NODE_ENV: test
+          POCKETBASE_URL: http://localhost:8090
+          JWT_SECRET: test-secret-key-for-ci-testing-only
+
+      - name: Test coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./gateway/coverage/lcov.info
+          flags: gateway
+          fail_ci_if_error: false
+
+  # ─── Security Scan ────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit (Frontend)
+        working-directory: ./frontend
+        run: npm audit --production --audit-level=moderate
+        continue-on-error: true
+
+      - name: Run npm audit (Gateway)
+        working-directory: ./gateway
+        run: npm audit --production --audit-level=moderate
+        continue-on-error: true
+
+  # ─── Docker Build Test ────────────────────────────────
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [frontend, gateway]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: hagen-logistics-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Gateway Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./gateway
+          file: ./gateway/Dockerfile
+          push: false
+          tags: hagen-logistics-gateway:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

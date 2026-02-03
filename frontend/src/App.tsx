@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { HagenLogisticsModule } from "./components/HagenLogisticsModule";
 import type { LogisticsMode, Task } from "./types";
-
-const API_KEY = "demo-key-for-development";
+import { env, isDevelopment } from "./config/env";
 
 export function App() {
   const [mode, setMode] = useState<LogisticsMode>("service");
 
   const handleTaskClick = (task: Task) => {
-    console.log("Task clicked:", task);
+    if (isDevelopment) {
+      console.log("Task clicked:", task);
+    }
   };
 
   return (
@@ -51,7 +52,7 @@ export function App() {
         <div className="max-w-screen-2xl mx-auto h-full">
           <HagenLogisticsModule
             mode={mode}
-            apiKey={API_KEY}
+            apiKey={env.VITE_API_KEY}
             onTaskClick={handleTaskClick}
           />
         </div>

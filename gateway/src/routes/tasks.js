@@ -1,20 +1,23 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getPocketBase } from "../services/pocketbase.js";
+import { validate, schemas, sanitizeFilter } from "../middleware/validation.js";
 
 export const tasksRouter = Router();
 
 // GET /api/tasks - List tasks for the authenticated client
-tasksRouter.get("/", async (req, res, next) => {
+tasksRouter.get("/", validate({ query: schemas.listTasks }), async (req, res, next) => {
   try {
     const pb = getPocketBase();
-    const { page = 1, perPage = 50, status, type } = req.query;
+    const { page, perPage, status, type } = req.query;
 
     let filter = `client_id="${req.client.id}"`;
-    if (status) filter += ` && status="${status}"`;
-    if (type) filter += ` && type="${type}"`;
+    if (status) filter += ` && status="${sanitizeFilter(status)}"`;
+    if (type) filter += ` && type="${sanitizeFilter(type)}"`;
 
-    const result = await pb.collection("tasks").getList(Number(page), Number(perPage), {
+    const result = await pb.collection("tasks").getList(page, perPage, {
       filter,
+      sort: "-created",
     });
 
     res.json(result);
@@ -24,7 +27,7 @@ tasksRouter.get("/", async (req, res, next) => {
 });
 
 // POST /api/tasks - Create a new task
-tasksRouter.post("/", async (req, res, next) => {
+tasksRouter.post("/", validate({ body: schemas.createTask }), async (req, res, next) => {
   try {
     const pb = getPocketBase();
     const record = await pb.collection("tasks").create({
@@ -40,36 +43,49 @@ tasksRouter.post("/", async (req, res, next) => {
 });
 
 // PATCH /api/tasks/:id - Update task status
-tasksRouter.patch("/:id", async (req, res, next) => {
-  try {
-    const pb = getPocketBase();
+tasksRouter.patch(
+  "/:id",
+  validate({
+    params: z.object({ id: schemas.taskId }),
+    body: schemas.updateTask,
+  }),
+  async (req, res, next) => {
+    try {
+      const pb = getPocketBase();
 
-    // Verify task belongs to client
-    const existing = await pb.collection("tasks").getOne(req.params.id);
-    if (existing.client_id !== req.client.id) {
-      return res.status(403).json({ error: "Not your task" });
+      // Verify task belongs to client
+      const existing = await pb.collection("tasks").getOne(req.params.id);
+      if (existing.client_id !== req.client.id) {
+        return res.status(403).json({ error: "Not your task" });
+      }
+
+      const record = await pb.collection("tasks").update(req.params.id, req.body);
+      res.json(record);
+    } catch (err) {
+      next(err);
     }
-
-    const record = await pb.collection("tasks").update(req.params.id, req.body);
-    res.json(record);
-  } catch (err) {
-    next(err);
   }
-});
+);
 
 // DELETE /api/tasks/:id
-tasksRouter.delete("/:id", async (req, res, next) => {
-  try {
-    const pb = getPocketBase();
+tasksRouter.delete(
+  "/:id",
+  validate({
+    params: z.object({ id: schemas.taskId }),
+  }),
+  async (req, res, next) => {
+    try {
+      const pb = getPocketBase();
 
-    const existing = await pb.collection("tasks").getOne(req.params.id);
-    if (existing.client_id !== req.client.id) {
-      return res.status(403).json({ error: "Not your task" });
+      const existing = await pb.collection("tasks").getOne(req.params.id);
+      if (existing.client_id !== req.client.id) {
+        return res.status(403).json({ error: "Not your task" });
+      }
+
+      await pb.collection("tasks").delete(req.params.id);
+      res.status(204).end();
+    } catch (err) {
+      next(err);
     }
-
-    await pb.collection("tasks").delete(req.params.id);
-    res.status(204).end();
-  } catch (err) {
-    next(err);
   }
-});
+);

@@ -1,0 +1,39 @@
+{
+  "name": "hagen-logistics-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stack logistique hybride (Service + Livraison) pour map.hagendigital.com",
+  "scripts": {
+    "prepare": "husky",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:test": "cd frontend && npm run test",
+    "gateway:dev": "cd gateway && npm run dev",
+    "gateway:start": "cd gateway && npm run start",
+    "gateway:test": "cd gateway && npm run test",
+    "lint": "npm run lint --workspaces",
+    "format": "npm run format --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "workspaces": [
+    "frontend",
+    "gateway"
+  ],
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "cd frontend && npm run lint:fix",
+      "cd frontend && npm run format"
+    ],
+    "gateway/**/*.js": [
+      "cd gateway && npm run lint:fix",
+      "cd gateway && npm run format"
+    ],
+    "*.md": [
+      "prettier --write"
+    ]
+  }
+}
